@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sentinel-claude-hook",
+            "args": [
+              "--policy",
+              "sentinel.policy.yaml",
+              "--task",
+              "coding_agent"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

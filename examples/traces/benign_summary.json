@@ -1,0 +1,22 @@
+{
+  "task_context": {
+    "task_type": "benign_summary",
+    "user_goal": "Summarize the email for me.",
+    "user_confirmed": false
+  },
+  "prior_events": [
+    {
+      "action": "read_email",
+      "allowed": true,
+      "result": {
+        "artifact_id": "email_1",
+        "labels": ["untrusted"],
+        "source_tool": "read_email"
+      }
+    }
+  ],
+  "proposed_action": {
+    "action": "summarize_to_user",
+    "derived_from": ["email_1"]
+  }
+}

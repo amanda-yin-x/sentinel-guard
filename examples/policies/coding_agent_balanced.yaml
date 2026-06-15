@@ -1,0 +1,60 @@
+tools:
+  read_file:
+    effect: read
+    returns_labels: [private]
+    deny_if_arg_matches:
+      - arg: path
+        rule: blocked_path
+        reason: Balanced coding policy blocks direct reads of secrets and credentials.
+        patterns: [.env, "*.env", "*.env.*", "*credential*", "*id_rsa*"]
+
+  shell_command:
+    effect: local_command
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: command
+        rule: dangerous_shell
+        reason: Balanced coding policy blocks destructive shell commands and shell-piped installers.
+        patterns: ["rm -rf*", "* rm -rf*", "sudo *", "*curl*|*sh*", "*wget*|*sh*"]
+
+  write_file:
+    effect: file_write
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: path
+        rule: protected_write
+        reason: Balanced coding policy blocks auth and secret file writes.
+        patterns: ["*.env", ".env", "*auth*", "*secret*"]
+
+  edit_file:
+    effect: file_write
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: path
+        rule: protected_write
+        reason: Balanced coding policy blocks auth and secret file edits.
+        patterns: ["*.env", ".env", "*auth*", "*secret*"]
+
+  web_fetch:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  web_search:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  mcp_tool:
+    effect: external_tool
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+tasks:
+  coding_agent:
+    allowed_tools: [read_file, shell_command, write_file, edit_file, web_fetch, web_search, mcp_tool]
+
+guardrails:
+  protected_labels: [private, secret, untrusted]
+  blocked_path_patterns: [.env, "*.env", "*.env.*", "*credential*", "*id_rsa*"]
+  dangerous_shell_patterns: ["rm -rf*", "sudo *", "*curl*|*sh*", "*wget*|*sh*"]

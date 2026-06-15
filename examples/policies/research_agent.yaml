@@ -1,0 +1,37 @@
+tools:
+  read_file:
+    effect: read
+    returns_labels: [private]
+    deny_if_arg_matches:
+      - arg: path
+        rule: blocked_path
+        reason: Research agents may not read secrets or credentials.
+        patterns: [.env, "*.env", "*.env.*", "*secret*", "*credential*", "*id_rsa*"]
+
+  summarize_to_user:
+    effect: user_output
+    returns_labels: [public]
+
+  web_fetch:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  web_search:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  mcp_tool:
+    effect: external_tool
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+tasks:
+  research_agent:
+    allowed_tools: [read_file, summarize_to_user, web_fetch, web_search, mcp_tool]
+
+guardrails:
+  protected_labels: [private, secret, untrusted]
+  blocked_path_patterns: [.env, "*.env", "*.env.*", "*secret*", "*credential*", "*id_rsa*"]
+  dangerous_shell_patterns: []

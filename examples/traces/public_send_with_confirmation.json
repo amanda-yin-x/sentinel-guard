@@ -1,0 +1,26 @@
+{
+  "task_context": {
+    "task_type": "confirmed_public_send",
+    "user_goal": "Send this public update after I confirm the draft.",
+    "user_confirmed": true
+  },
+  "prior_events": [
+    {
+      "action": "draft_to_user",
+      "allowed": true,
+      "result": {
+        "artifact_id": "draft_to_user",
+        "labels": ["public"],
+        "source_tool": "draft_to_user"
+      }
+    }
+  ],
+  "proposed_action": {
+    "action": "send_email",
+    "args": {
+      "to": "teammate@example.com",
+      "body": "Public project update."
+    },
+    "derived_from": ["draft_to_user"]
+  }
+}

@@ -1,0 +1,60 @@
+tools:
+  read_file:
+    effect: read
+    returns_labels: [private]
+    deny_if_arg_matches:
+      - arg: path
+        rule: blocked_path
+        reason: Strict coding policy blocks secrets, credentials, and private keys.
+        patterns: [.env, "*.env", "*.env.*", "*secret*", "*credential*", "*id_rsa*"]
+
+  shell_command:
+    effect: local_command
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: command
+        rule: dangerous_shell
+        reason: Strict coding policy blocks destructive or remote-install shell commands.
+        patterns: ["rm -rf*", "* rm -rf*", "sudo *", "chmod -R *", "*curl*|*sh*", "*wget*|*sh*"]
+
+  write_file:
+    effect: file_write
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: path
+        rule: protected_write
+        reason: Strict coding policy blocks writes to auth, package, CI, and security files.
+        patterns: ["*.env", ".env", "*auth*", "*security*", ".github/workflows/*", "package.json"]
+
+  edit_file:
+    effect: file_write
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: path
+        rule: protected_write
+        reason: Strict coding policy blocks edits to auth, package, CI, and security files.
+        patterns: ["*.env", ".env", "*auth*", "*security*", ".github/workflows/*", "package.json"]
+
+  web_fetch:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  web_search:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  mcp_tool:
+    effect: external_tool
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+tasks:
+  coding_agent:
+    allowed_tools: [read_file, shell_command, write_file, edit_file, web_fetch, web_search]
+
+guardrails:
+  protected_labels: [private, secret, untrusted]
+  blocked_path_patterns: [.env, "*.env", "*.env.*", "*secret*", "*credential*", "*id_rsa*"]
+  dangerous_shell_patterns: ["rm -rf*", "sudo *", "chmod -R *", "*curl*|*sh*", "*wget*|*sh*"]

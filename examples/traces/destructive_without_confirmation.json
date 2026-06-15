@@ -1,0 +1,13 @@
+{
+  "task_context": {
+    "task_type": "maintenance",
+    "user_goal": "Delete old notes, but I have not confirmed deletion.",
+    "user_confirmed": false
+  },
+  "proposed_action": {
+    "action": "delete_file",
+    "args": {
+      "path": "important_notes.md"
+    }
+  }
+}

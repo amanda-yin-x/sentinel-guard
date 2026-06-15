@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-guard"
+version = "0.1.0"
+description = "Runtime permission monitor and policy studio for tool-using LLM agents."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Amanda Yin" },
+]
+keywords = [
+    "llm-agents",
+    "ai-safety",
+    "agent-security",
+    "prompt-injection",
+    "tool-use",
+    "runtime-monitoring",
+    "permission-system",
+    "claude-code",
+    "formal-methods",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Security",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/amanda-yin-x/sentinel-guard"
+Repository = "https://github.com/amanda-yin-x/sentinel-guard"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+sentinel = "sentinel.cli:main"
+sentinel-ui = "sentinel.ui:main"
+sentinel-claude-hook = "sentinel.integrations.claude_code_hook:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sentinel*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

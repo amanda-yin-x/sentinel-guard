@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.sentinel/
+sentinel.policy.yaml
+policy.generated.yaml
+*.log
+*.tmp
+*.swp
+sentinel_eval*.json
+sentinel_eval*.html
+report*.json
+report*.html
+.DS_Store

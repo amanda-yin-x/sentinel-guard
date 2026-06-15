@@ -1,0 +1,10 @@
+{
+  "hook_event_name": "PreToolUse",
+  "session_id": "demo-session",
+  "cwd": "/tmp/sentinel-demo",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "pytest -q",
+    "description": "Run the test suite"
+  }
+}

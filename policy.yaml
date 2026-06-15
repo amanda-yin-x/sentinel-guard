@@ -1,0 +1,184 @@
+# A deliberately small policy language for tool-using agents.
+# The monitor interprets these rules deterministically.
+
+tools:
+  read_email:
+    effect: read
+    returns_labels: [untrusted]
+
+  read_file:
+    effect: read
+    returns_labels: [private]
+    deny_if_arg_matches:
+      - arg: path
+        rule: blocked_path
+        reason: Protected paths such as secrets, credentials, and private keys may not be read.
+        patterns:
+          - .env
+          - "*.env"
+          - "*.env.*"
+          - "*secret*"
+          - "*secrets*"
+          - "*credential*"
+          - "*credentials*"
+          - "*token*"
+          - "*id_rsa*"
+          - "*ssh_key*"
+
+  read_secret_file:
+    effect: read
+    returns_labels: [secret]
+
+  shell_command:
+    effect: local_command
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: command
+        rule: dangerous_shell
+        reason: Destructive or remote-install shell commands are blocked before execution.
+        patterns:
+          - "rm -rf*"
+          - "* rm -rf*"
+          - "sudo *"
+          - "chmod -R *"
+          - "*curl*|*sh*"
+          - "*wget*|*sh*"
+
+  write_file:
+    effect: file_write
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: path
+        rule: protected_write
+        reason: Security-sensitive configuration and auth files require a narrower policy before editing.
+        patterns:
+          - "*.env"
+          - ".env"
+          - "*auth*"
+          - "*security*"
+          - ".github/workflows/*"
+          - "package.json"
+
+  edit_file:
+    effect: file_write
+    returns_labels: [public]
+    deny_if_arg_matches:
+      - arg: path
+        rule: protected_write
+        reason: Security-sensitive configuration and auth files require a narrower policy before editing.
+        patterns:
+          - "*.env"
+          - ".env"
+          - "*auth*"
+          - "*security*"
+          - ".github/workflows/*"
+          - "package.json"
+
+  summarize_to_user:
+    effect: user_output
+    returns_labels: [public]
+
+  draft_to_user:
+    effect: user_output
+    returns_labels: [public]
+
+  send_email:
+    effect: external_write
+    external_sink: true
+    requires_confirmation: true
+    requires_prior_event: draft_to_user
+    deny_if_input_labels: [private, secret, untrusted]
+
+  web_request:
+    effect: external_write
+    external_sink: true
+    requires_confirmation: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  web_fetch:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  web_search:
+    effect: external_read
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  mcp_tool:
+    effect: external_tool
+    external_sink: true
+    deny_if_input_labels: [private, secret, untrusted]
+
+  delete_file:
+    effect: destructive
+    requires_confirmation: true
+
+# Least-privilege capabilities by task type.
+# A task grants only the tools needed for the user's stated goal.
+tasks:
+  benign_summary:
+    allowed_tools: [read_email, summarize_to_user]
+
+  review_and_send_summary:
+    allowed_tools: [read_email, read_file, draft_to_user, send_email, summarize_to_user]
+
+  summarize_local_context:
+    allowed_tools: [read_email, read_file, summarize_to_user]
+
+  confirmed_public_send:
+    allowed_tools: [draft_to_user, send_email]
+
+  external_web_report:
+    allowed_tools: [read_email, read_file, web_request, summarize_to_user]
+
+  maintenance:
+    allowed_tools: [delete_file]
+
+  coding_agent:
+    allowed_tools:
+      - shell_command
+      - read_file
+      - write_file
+      - edit_file
+      - web_fetch
+      - web_search
+      - mcp_tool
+
+  email_agent:
+    allowed_tools:
+      - read_email
+      - read_file
+      - summarize_to_user
+      - draft_to_user
+      - send_email
+
+  research_agent:
+    allowed_tools:
+      - read_file
+      - summarize_to_user
+      - web_fetch
+      - web_search
+      - mcp_tool
+
+guardrails:
+  protected_labels: [private, secret, untrusted]
+  blocked_path_patterns:
+    - .env
+    - "*.env"
+    - "*.env.*"
+    - "*secret*"
+    - "*credentials*"
+    - "*id_rsa*"
+  dangerous_shell_patterns:
+    - "rm -rf*"
+    - "sudo *"
+    - "chmod -R *"
+    - "*curl*|*sh*"
+    - "*wget*|*sh*"
+
+temporal_rules:
+  - id: send_requires_draft_trace
+    before: send_email
+    require_events: [draft_to_user]
+    description: Email sends require a prior draft shown to the user.
