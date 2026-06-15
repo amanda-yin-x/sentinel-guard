@@ -20,7 +20,7 @@ Open three terminal tabs:
 
 1. Demo CLI tab.
 2. Policy Studio tab.
-3. Optional Claude Code hook tab.
+3. Optional eval/policy synthesis tab.
 
 Keep the browser ready for:
 
@@ -61,7 +61,7 @@ Sentinel Guard 0.1.0
 Say:
 
 > This is installed as a real CLI. The demo, JSON checker, Policy Studio, and
-> Claude Code hook all call the same deterministic monitor.
+> integration adapters all call the same deterministic monitor.
 
 ## 0:30-1:45 Show The Attack And The Block
 
@@ -153,37 +153,54 @@ Say:
 > The JSON includes enough context for audit logs and security evals, not just a
 > yes-or-no answer.
 
-## 2:30-3:15 Show Claude Code Hook Shape
+## 2:30-3:15 Show Policy Synthesis And Provenance
 
 Run:
 
 ```bash
-sentinel-claude-hook \
-  --dry-run-json examples/claude_code/pretooluse_bash_destructive.json \
-  --explain
+sentinel synthesize-policy \
+  "Summarize this repo and run tests, but do not edit files." \
+  --out /tmp/sentinel.generated.yaml
 ```
 
 Point to:
 
 ```text
-"hookEventName": "PreToolUse"
-"permissionDecision": "deny"
-"Blocked by Sentinel: dangerous_shell"
+Task type: read_only_test
+Allowed tools: read_file, shell_command, summarize_to_user
+Allowed Bash patterns: pytest*, python -m pytest*, npm test*, npm run test*, uv run pytest*
 ```
 
 Say:
 
-> Claude Code exposes a `PreToolUse` hook: after Claude has generated tool
-> arguments, but before the tool runs, it passes JSON to a hook command. Sentinel
-> reads that JSON, maps Claude tools like Bash, Read, Write, WebFetch, WebSearch,
-> and MCP tools into internal actions, and returns Claude-compatible
-> `hookSpecificOutput`.
+> This is a practical bridge from a natural-language task to an explicit
+> least-privilege policy. For this task, the monitor allows reading files,
+> summarizing to the user, and running tests, but it does not grant write tools
+> or external sinks.
+
+Run:
+
+```bash
+sentinel diff-policy policy.yaml /tmp/sentinel.generated.yaml
+```
+
+Point to:
+
+```text
+Tasks added: read_only_test
+shell_command: modified fields: allow_if_arg_matches
+```
 
 Say:
 
-> This means the same monitor can sit between a real coding agent and tools like
-> Bash or file reads. The demo fixture blocks a destructive shell command before
-> it executes.
+> The generated policy is still just YAML. The synthesizer is not trusted as a
+> classifier or proof; its output is checked by the same deterministic monitor.
+
+Say:
+
+> Combined with the provenance shown earlier, this gives the project two
+> important technical pieces: task-scoped permissions and data-flow-aware
+> enforcement.
 
 ## 3:15-4:15 Show Policy Studio UI
 
@@ -286,7 +303,9 @@ Say:
 
 > The fellowship connection is that this bridges prompt guardrails to explicit
 > permissions, runtime monitoring, provenance, audit trails, and security evals.
-> It is not formally verified yet, and it is not a full MCP proxy. But the
+> It also includes an optional Claude Code `PreToolUse` adapter, tested through
+> fixture JSON, but this demo does not depend on a live Claude Code account. It
+> is not formally verified yet, and it is not a full MCP proxy. But the
 > enforcement boundary is concrete: proposed tool calls are checked before they
 > execute.
 
@@ -295,12 +314,42 @@ End with:
 > The next step would be making the policy language more formal and connecting
 > this monitor to more agent runtimes.
 
-## Real Claude Code Hook Setup
+## Optional Claude Code Integration Note
 
-Use this after the 5-minute demo, or as a short appendix if someone asks how it
-connects to a real LLM agent.
+Do not use this in the main 5-minute demo if your Claude Code account is not
+available. Mention it only if someone asks how the monitor would connect to a
+real LLM agent.
 
-### Option A: Install Into This Project
+Say:
+
+> The repo includes a Claude Code adapter, but I am not relying on a live Claude
+> Code account for the demo. The adapter is tested with fixture JSON that matches
+> the `PreToolUse` boundary: Claude generates tool arguments, then Sentinel checks
+> them before execution.
+
+Show the fixture-only command if useful:
+
+```bash
+sentinel-claude-hook \
+  --dry-run-json examples/claude_code/pretooluse_bash_destructive.json \
+  --explain
+```
+
+Point to:
+
+```text
+"hookEventName": "PreToolUse"
+"permissionDecision": "deny"
+"Blocked by Sentinel: dangerous_shell"
+```
+
+Say:
+
+> This is not a live Claude Code session. It is a tested adapter contract. The
+> same monitor maps Claude tools like Bash, Read, Write, WebFetch, WebSearch, and
+> MCP tools into Sentinel actions.
+
+### Later, When Claude Code Is Available
 
 From this repo:
 
@@ -342,21 +391,6 @@ Expected behavior:
 - Sentinel receives the `PreToolUse` JSON.
 - Sentinel returns `permissionDecision: deny`.
 - Claude Code cancels the tool call and sees the Sentinel reason.
-
-### Option B: Install Into Another Claude Code Project
-
-In the target project:
-
-```bash
-source /path/to/sentinel-guard/.venv/bin/activate
-cp /path/to/sentinel-guard/examples/policies/coding_agent_strict.yaml sentinel.policy.yaml
-sentinel install-claude-code --project . --policy sentinel.policy.yaml
-claude
-```
-
-Important: launch `claude` from a shell where `sentinel-claude-hook` is on
-`PATH`. For this work sample, the simplest path is the activated virtualenv. A
-future packaged release could make this global via `pipx` or PyPI.
 
 ### What The Hook Is Doing
 
