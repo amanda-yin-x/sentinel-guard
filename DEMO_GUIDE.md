@@ -35,20 +35,40 @@ policy is inspectable and testable, not to become the whole demo.
 
 Say:
 
-> This project is Sentinel Guard. It is a local runtime permission monitor for
-> tool-using LLM agents. The key idea is that prompt guardrails are not enough:
-> once a model proposes a tool call, the system should still check whether that
-> action is allowed for this task, this data, and this trace.
+> I built Sentinel Guard as a small runtime permission monitor for tool-using
+> LLM agents. The motivation is that prompt-injection defenses often focus on
+> detecting malicious text, but real agents fail at the tool boundary: they read
+> something untrusted, generate a tool call, and then that tool call may send
+> data, edit files, or run commands.
 
 Say:
 
-> Sentinel Guard is not trying to classify text as prompt injection. It enforces
-> explicit permissions at the tool boundary. If the model proposes an unsafe
-> action, the monitor can block it before execution.
+> Sentinel Guard takes a different approach. It does not try to classify whether
+> a prompt looks malicious. It checks the proposed tool call before execution
+> against an explicit policy: what task is being performed, what tools are
+> allowed, what data labels are involved, whether the user confirmed the action,
+> and what happened earlier in the trace.
+
+Say:
+
+> In five minutes, I will show the core idea: an unsafe email send that would
+> execute without a monitor, the same action blocked by Sentinel, the
+> machine-readable firewall interface, task-scoped policy synthesis, eval
+> metrics, and the local Policy Studio.
+
+Shorter version if you need to save time:
+
+> I built Sentinel Guard to explore runtime permissions for tool-using LLM
+> agents. It is not a prompt-injection classifier. Instead, it checks proposed
+> tool calls before execution using explicit task permissions, provenance
+> labels, confirmation requirements, and trace rules. The goal is simple: even
+> if the model proposes an unsafe action, the system can still block it at the
+> tool boundary.
 
 Run:
 
 ```bash
+source .venv/bin/activate
 sentinel version
 ```
 
